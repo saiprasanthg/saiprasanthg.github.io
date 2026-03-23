@@ -21,6 +21,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
 
+html {
+  scroll-padding-top: 90px;
+}
+
 body {
   background: var(--black);
   color: var(--text);
@@ -231,7 +235,12 @@ nav.scrolled {
   text-transform: uppercase;
   animation: fadeIn 1s ease 1s both;
   z-index: 2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
+
+.hero-scroll-hint:hover { color: var(--text); }
 
 .scroll-arrow {
   width: 20px; height: 20px;
@@ -239,6 +248,12 @@ nav.scrolled {
   border-bottom: 2px solid var(--dim);
   transform: rotate(45deg);
   animation: bounce 1.5s infinite;
+  transition: border-color 0.2s ease;
+}
+
+.hero-scroll-hint:hover .scroll-arrow {
+  border-right-color: var(--text);
+  border-bottom-color: var(--text);
 }
 
 @keyframes bounce { 0%,100%{transform:rotate(45deg) translateY(0)} 50%{transform:rotate(45deg) translateY(5px)} }
@@ -870,10 +885,10 @@ body.loading { overflow: hidden; }
       <a href="#contact" class="btn btn-info">ℹ &nbsp;Contact Me</a>
     </div>
   </div>
-  <div class="hero-scroll-hint">
+  <a href="#about" class="hero-scroll-hint" aria-label="Scroll to About section">
     <span>Scroll</span>
-    <div class="scroll-arrow"></div>
-  </div>
+    <span class="scroll-arrow" aria-hidden="true"></span>
+  </a>
 </section>
 
 <!-- ABOUT -->
@@ -1160,12 +1175,12 @@ body.loading { overflow: hidden; }
   </div>
   <div class="edu-row">
     <div class="edu-card">
-      <div class="edu-degree">M.S. Computer Engineering</div>
+      <div class="edu-degree">Master of Science in Computer Software Engineering</div>
       <div class="edu-school">San Jose State University, USA</div>
       <div class="edu-year">Class of 2024</div>
     </div>
     <div class="edu-card">
-      <div class="edu-degree">B.Tech Computer Science</div>
+      <div class="edu-degree">Bachelor of Technology in Computer Science</div>
       <div class="edu-school">S.R.K.R Engineering College, India</div>
       <div class="edu-year">Class of 2017</div>
     </div>
