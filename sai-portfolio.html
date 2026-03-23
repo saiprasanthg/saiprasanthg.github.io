@@ -803,7 +803,10 @@ footer {
   color: var(--red);
   line-height: 1;
   position: relative;
-  animation: nFlash 2s ease forwards;
+  opacity: 0;
+  transform: scale(3);
+  filter: blur(24px);
+  animation: nFlash 2s ease both paused;
   text-shadow:
     0 0 40px rgba(229,9,20,0.9),
     0 0 100px rgba(229,9,20,0.5),
@@ -820,15 +823,48 @@ footer {
 .loading-bar {
   position: absolute;
   bottom: 0; left: 0;
+  width: 0;
   height: 3px;
   background: var(--red);
   box-shadow: 0 0 14px rgba(229,9,20,0.9);
-  animation: loadBar 2s ease forwards;
+  animation: loadBar 2s ease forwards paused;
 }
 @keyframes loadBar {
   0%   { width: 0%; }
   100% { width: 100%; }
 }
+
+#loading-screen.loading-started .netflix-n,
+#loading-screen.loading-started .loading-bar {
+  animation-play-state: running;
+}
+
+#loading-screen.needs-interaction {
+  cursor: pointer;
+}
+
+.loading-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 999px;
+  background: rgba(0,0,0,0.55);
+  color: rgba(255,255,255,0.78);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+#loading-screen.needs-interaction .loading-hint {
+  opacity: 1;
+}
+
 body.loading { overflow: hidden; }
 
 /* ── SCROLLBAR ── */
@@ -854,6 +890,7 @@ body.loading { overflow: hidden; }
 <!-- LOADING SCREEN -->
 <div id="loading-screen">
   <div class="netflix-n">N</div>
+  <div class="loading-hint">Tap to start intro</div>
   <div class="loading-bar"></div>
 </div>
 
@@ -1221,33 +1258,87 @@ body.loading { overflow: hidden; }
 <script>
 // Loading screen
 document.body.classList.add('loading');
+const loadingScreen = document.getElementById('loading-screen');
 const introSound = new Audio('netflix-intro.mp3');
 introSound.preload = 'auto';
 introSound.volume = 0.7;
+let loadingTimer;
+let introStarted = false;
 
 const stopIntroSound = () => {
   introSound.pause();
   introSound.currentTime = 0;
 };
 
+const cleanupInteractionListeners = () => {
+  loadingScreen.removeEventListener('pointerdown', unlockIntroSound);
+  loadingScreen.removeEventListener('touchstart', unlockIntroSound);
+  loadingScreen.removeEventListener('click', unlockIntroSound);
+};
+
+const finishLoading = () => {
+  loadingScreen.classList.add('hide');
+  loadingScreen.classList.remove('needs-interaction', 'loading-started');
+  stopIntroSound();
+  document.body.classList.remove('loading');
+};
+
+const scheduleLoadingFinish = () => {
+  if (loadingTimer) {
+    window.clearTimeout(loadingTimer);
+  }
+  loadingTimer = window.setTimeout(finishLoading, 2200);
+};
+
+const startIntroAnimation = () => {
+  if (introStarted) return;
+  introStarted = true;
+  loadingScreen.classList.remove('needs-interaction');
+  loadingScreen.classList.add('loading-started');
+  cleanupInteractionListeners();
+  scheduleLoadingFinish();
+};
+
 const playIntroSound = () => {
   introSound.currentTime = 0;
-  const playAttempt = introSound.play();
+  return introSound.play();
+};
+
+const unlockIntroSound = () => {
+  const playAttempt = playIntroSound();
   if (playAttempt && typeof playAttempt.catch === 'function') {
     playAttempt.catch(() => {});
   }
+  startIntroAnimation();
 };
 
-playIntroSound();
+const waitForInteraction = () => {
+  loadingScreen.classList.add('needs-interaction');
+  loadingScreen.addEventListener('pointerdown', unlockIntroSound, { once: true });
+  loadingScreen.addEventListener('touchstart', unlockIntroSound, { once: true, passive: true });
+  loadingScreen.addEventListener('click', unlockIntroSound, { once: true });
+};
 
-setTimeout(() => {
-  const ls = document.getElementById('loading-screen');
-  ls.classList.add('hide');
+const initialPlayAttempt = playIntroSound();
+if (initialPlayAttempt && typeof initialPlayAttempt.catch === 'function') {
+  initialPlayAttempt
+    .then(() => {
+      startIntroAnimation();
+    })
+    .catch(() => {
+      waitForInteraction();
+    });
+} else {
+  startIntroAnimation();
+}
+
+window.addEventListener('pagehide', () => {
+  if (loadingTimer) {
+    window.clearTimeout(loadingTimer);
+  }
+  cleanupInteractionListeners();
   stopIntroSound();
-  document.body.classList.remove('loading');
-}, 2200);
-
-window.addEventListener('pagehide', stopIntroSound);
+});
 
 // Navbar scroll effect
 const navbar = document.getElementById('navbar');
